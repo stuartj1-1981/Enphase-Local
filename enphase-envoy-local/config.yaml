@@ -1,0 +1,43 @@
+name: "Enphase IQ Gateway Local"
+description: "Local-network poller for the Enphase IQ Gateway (firmware 7/8, token auth). Enables the live data stream and exposes PV, house load, grid and battery power plus energy totals over MQTT auto-discovery. Auto-refreshes the gateway token in code."
+version: "1.0.0"
+slug: "enphase_envoy_local"
+url: "https://github.com/stuartj1-1981/Enphase-Local"
+arch:
+  - aarch64
+  - amd64
+  - armhf
+  - armv7
+  - i386
+startup: application
+boot: auto
+init: false
+options:
+  envoy_host: "envoy.local"
+  envoy_serial: ""
+  enlighten_email: ""
+  enlighten_password: ""
+  manual_token: ""
+  mqtt_host: ""
+  mqtt_port: 1883
+  mqtt_user: ""
+  mqtt_pass: ""
+  poll_interval: 5
+  debug: false
+schema:
+  envoy_host: str
+  envoy_serial: str?
+  enlighten_email: str?
+  enlighten_password: password?
+  manual_token: str?
+  mqtt_host: str?
+  mqtt_port: port
+  mqtt_user: str?
+  mqtt_pass: password?
+  poll_interval: "int(2,300)"
+  debug: bool
+services:
+  - mqtt:need
+map:
+  - share:rw
+  - addon_config:rw

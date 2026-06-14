@@ -1,0 +1,59 @@
+#!/usr/bin/with-contenv bashio
+# ==============================================================================
+# Enphase IQ Gateway Local — S6 service run script
+# ==============================================================================
+
+# Read add-on options
+ENVOY_HOST=$(bashio::config 'envoy_host')
+ENVOY_SERIAL=$(bashio::config 'envoy_serial')
+ENLIGHTEN_EMAIL=$(bashio::config 'enlighten_email')
+ENLIGHTEN_PASSWORD=$(bashio::config 'enlighten_password')
+MANUAL_TOKEN=$(bashio::config 'manual_token')
+POLL_INTERVAL=$(bashio::config 'poll_interval')
+DEBUG=$(bashio::config 'debug')
+
+# MQTT: prefer add-on options, fall back to HA MQTT service discovery
+MQTT_HOST=$(bashio::config 'mqtt_host')
+MQTT_PORT=$(bashio::config 'mqtt_port')
+MQTT_USER=$(bashio::config 'mqtt_user')
+MQTT_PASS=$(bashio::config 'mqtt_pass')
+
+if bashio::var.is_empty "${MQTT_HOST}"; then
+    if bashio::services.available "mqtt"; then
+        MQTT_HOST=$(bashio::services mqtt "host")
+        MQTT_PORT=$(bashio::services mqtt "port")
+        MQTT_USER=$(bashio::services mqtt "username")
+        MQTT_PASS=$(bashio::services mqtt "password")
+        bashio::log.info "Using HA MQTT service: ${MQTT_HOST}:${MQTT_PORT}"
+    else
+        bashio::log.warning "No MQTT service available — publishing disabled"
+    fi
+fi
+
+# Export for the Python poller
+export ENVOY_HOST
+export ENVOY_SERIAL
+export ENLIGHTEN_EMAIL
+export ENLIGHTEN_PASSWORD
+export MANUAL_TOKEN
+export MQTT_HOST
+export MQTT_PORT
+export MQTT_USER
+export MQTT_PASS
+export POLL_INTERVAL
+export TOKEN_DIR="/data"
+export LOG_DIR="/config"
+
+if bashio::var.true "${DEBUG}"; then
+    export DEBUG="true"
+fi
+
+bashio::log.info "Starting Enphase IQ Gateway Local"
+bashio::log.info "  Gateway: ${ENVOY_HOST} (serial ${ENVOY_SERIAL:-auto-detect})"
+bashio::log.info "  MQTT: ${MQTT_HOST}:${MQTT_PORT}"
+bashio::log.info "  Poll: ${POLL_INTERVAL}s"
+
+mkdir -p "${LOG_DIR}"
+
+# Run the poller — S6 will restart it if it exits
+exec python3 /opt/enphase/enphase_envoy.py
